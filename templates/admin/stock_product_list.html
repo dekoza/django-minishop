@@ -1,0 +1,101 @@
+{% extends "admin/base_site.html" %}
+{% load adminmedia admin_list i18n %}
+
+{% block stylesheet %}{% admin_media_prefix %}css/changelists.css{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+<script type="text/javascript" src="{% admin_media_prefix %}js/getElementsBySelector.js"></script>
+{# <script type="text/javascript" src="{% admin_media_prefix %}js/admin/CollapsedFiltersets.js"></script> #}
+{{ media }}
+
+<script type="text/javascript">
+$(document).ready(function(){
+    $('.filterset h3').click(function() {
+        $(this).parent().toggleClass('collapse-closed');
+        $(this).parent().toggleClass('collapse-open');
+        $(this).next().next().toggle();
+    });
+    $('input.search-fields-verbose').click(function() {
+        $(this).val("");
+        $(this).removeClass("search-fields-verbose");
+    });
+});
+</script>
+<style type="text/css">
+  #id_query {
+    width: 150px;
+  }
+</style>
+
+{% endblock %}
+
+{% block bodyclass %}change-list{% endblock %}
+
+{% if not is_popup %}{% block breadcrumbs %}<div class="breadcrumbs"><a href="/panel/">{% trans "Home" %}</a> &rsaquo; {{ app_label|capfirst }}</div>{% endblock %}{% endif %} 
+
+{% block coltype %}flex{% endblock %}
+
+{% block content %}
+<div id="content-main">
+<div class="module{% if cl.has_filters %} filtered{% endif %}" id="changelist">
+  <div>
+    <form action="" method="get">
+    {{form}}
+    <input type="submit" value="Zmień" />
+  </form>
+  <br />
+  &nbsp;&nbsp;&nbsp;<span class="ver_button"><a href="{% url stock_product_list %}">{% trans "Clear criteria" %}</a></span>
+  <br />
+  <br />
+  <br />
+  </div>
+{% block filters %}
+{% endblock %}
+
+{% block result_list %}
+  {% if object_list %}
+<div id="changelist" class="module">
+  <table cellspacing="0">
+    <thead>
+      <th>{% trans "Cataloge number" %}</th>
+      <th>{% trans "Product name" %}</th>
+      <th>{% trans "Price" %}</th>
+      <th>{% trans "Wholesale price" %}</th>
+      <th>{% trans "In stock" %}</th>
+      <th>{% trans "Stock volume" %}</th>
+      <th>{% trans "Wholesale volume" %}</th>
+      <th>{% trans "Availability" %}</th>
+      <th>{% trans "Edit" %}</th>
+    </thead>
+    {% for object in object_list %}
+    <tr class="{% cycle 'row1' 'row2' %}">
+      <td>{{object.catalogue_number}}</td>
+      <td><a href="{% url stock_product_detail object.pk %}">{{object.name}}</a></td>
+      <td>{{object.price}}</td>
+      <td>{{object.wholesale_price}} &euro;</td>
+      <td>{{object.quantity}}</td>
+      <td>{{object.volume}}</td>
+      <td>{{object.wholesale_volume}} &euro;</td>
+      <td>{{object.show_availibility}}</td>
+      <td><a href="/panel/products/product/{{object.pk}}/">{% trans "Edit" %}</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+  {% endif %}
+{% endblock %}
+<p class="paginator">
+{% if is_paginated %}
+{% for i in paginator.page_range %}
+{% ifequal i page %}
+&nbsp;&nbsp;<strong>{{i}}</strong>&nbsp;&nbsp;
+{% else %}
+<a href="{% url stock_product_list_paginated i %}{{get_string}}">{{i}}</a>
+  {% endifequal %}
+{% endfor %}
+{% endif %}
+</p>
+</div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends "admin/base_site.html" %}
+{% load adminmedia admin_list i18n %}
+
+{% block stylesheet %}{% admin_media_prefix %}css/changelists.css{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+<script type="text/javascript" src="/media/imaging/jquery-ui-1.7.1.custom.min.js"></script>
+<script type="text/javascript" src="/media/js/recommendations.js"></script>
+<script type="text/javascript" src="{% admin_media_prefix %}js/getElementsBySelector.js"></script>
+{# <script type="text/javascript" src="{% admin_media_prefix %}js/admin/CollapsedFiltersets.js"></script> #}
+{{ media }}
+
+<script type="text/javascript">
+recommendation_types = new Array();
+{% for type in r_types %}
+recommendation_types[{{type.0}}] = "{{type.1}}";
+{% endfor %}
+</script>
+<script type="text/javascript">
+$(document).ready(function(){
+    $('.filterset h3').click(function() {
+        $(this).parent().toggleClass('collapse-closed');
+        $(this).parent().toggleClass('collapse-open');
+        $(this).next().next().toggle();
+    });
+    $('input.search-fields-verbose').click(function() {
+        $(this).val("");
+        $(this).removeClass("search-fields-verbose");
+    });
+});
+</script>
+<style type="text/css">
+        div#products_div {
+                width: 300px;
+                height: 500px;
+                overflow: auto;
+                float: left;
+                position: relative;
+                
+        }
+        div#recommendations {
+                min-height: 500px;
+                overflow: hidden;
+                position: relative;
+        }
+        div.recommendation {
+                width: 200px;
+                height: 150px;
+                border: 1px #aaa solid;
+                float: left;
+                margin: 3px;
+                position: relative;
+        }
+        div.recommendation h2 {
+                font: 12px Verdana;
+                font-weight: bold;
+                margin: 2px;
+                cursor: move;
+        }
+        div.recommendation div {
+                margin: 3px;
+        }
+        div.recommendation select,
+        div.recommendation input {
+                position: absolute;
+                bottom: 2px;
+        }
+        div.recommendation input {
+                right: 3px;
+        }
+        table#products tr {
+                cursor: pointer!important;
+        }
+        table#products tr.off td {
+                color: #aaa!important;
+        }
+        div.loading {
+                width: 100%;
+                height: 100%;
+                position: absolute;
+                left: 0;
+                top: 0;
+                background: #fafafa url(/media/imaging/uploading.gif) center center no-repeat;
+        }
+        span#request_info {
+                padding: 5px;
+                font-size: 12px;
+                font-weight: bold;
+                vertical-align: middle;
+        }
+</style>
+{% endblock %}
+
+
+{% if not is_popup %}{% block breadcrumbs %}<div class="breadcrumbs"><a href="../../">{% trans "Home" %}</a> &rsaquo; {{ app_label|capfirst }}</div>{% endblock %}{% endif %} 
+
+{% block coltype %}flex{% endblock %}
+
+{% block content %}
+<div id="content-main">
+<div class="module{% if cl.has_filters %} filtered{% endif %}">
+  
+{% block filters %}
+{% endblock %}
+
+{% block result_list %}
+<p>
+{{form.category}} <input id="save_recommendations" type="button" value="{% trans "Save" %}" /><span id="request_info"></span>
+</p>
+<table summary="recommendation form">
+        <tr>
+                <td width="230">
+                        <div class="module" style="margin: 10px; padding-top: 3px;" id="products_div">
+                                <table summary="products table" id="products" width="100%">
+                                        <thead>
+                                                <th width="80%">{% trans "Name" %}</th>
+                                                <th>{% trans "Price" %}</th>
+                                        </thead>
+                                        <tbody>
+                                                <tr><td colspan="2">Proszę wybrać kategorie</td></tr>
+                                        </tbody>
+                                </table>
+                        </div>
+                </td>
+                <td width="630">
+                        <div id="recommendations">
+                                <div id="no_recom">Brak rekomendacji</div>
+                        </div>
+                </td>
+        </tr>
+</table>
+<br class="clear" />
+{% endblock %}
+</div>
+</div>
+
+{% endblock %}
+

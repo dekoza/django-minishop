@@ -1,0 +1,137 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_modify adminmedia %}
+
+{% block extrahead %}{{ block.super }}
+<script type="text/javascript" src="../../../jsi18n/"></script>
+{{ media }}
+<script type="text/javascript" src="{% admin_media_prefix %}jquery/jquery-ui-1.7.1.custom.min.js"></script>
+<script type="text/javascript" src="{% admin_media_prefix %}js/admin/CollapsedFieldsets.js"></script>
+{% endblock %}
+
+{% block stylesheet %}{% admin_media_prefix %}css/forms.css{% endblock %}
+
+{% block coltype %}{% if ordered_objects %}colMS{% else %}colM{% endif %}{% endblock %}
+
+{% block bodyclass %}{{ opts.app_label }}-{{ opts.object_name.lower }} change-form{% endblock %}
+
+{% block breadcrumbs %}{% if not is_popup %}
+<div class="breadcrumbs">
+     <a href="../../../">{% trans "Home" %}</a> &rsaquo;
+     <a href="{% url admin_orders_list "all" %}">{{ app_label|capfirst|escape }}</a> &rsaquo; {{ order.name }}
+</div>
+{% endif %}{% endblock %}
+
+{% block content %}<div id="content-main">
+{% block object-tools %}
+{% if change %}{% if not is_popup %}
+  <ul class="object-tools"><li><a href="history/">{% trans "History" %}</a></li>
+  {% if has_absolute_url %}<li><a href="../../../r/{{ content_type_id }}/{{ object_id }}/" class="focus">{% trans "View on site" %}</a></li>{% endif%}
+  </ul>
+{% endif %}{% endif %}
+{% endblock %}
+
+{% if is_popup %}<input type="hidden" name="_popup" value="1" />{% endif %}
+{% if save_on_top %}{% submit_row %}{% endif %}
+{% if errors %}
+    <p class="errornote">
+    {% blocktrans count errors|length as counter %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktrans %}
+    </p>
+    <ul class="errorlist">{% for error in adminform.form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+{% endif %}
+
+<form action="{% url order_change_status order.pk %}?next={{current_url}}" method="post">
+  <fieldset class="module aligned">
+    <div class="form-row">
+      <div class="field-box">
+        <label class="required">{% trans "Change order status:" %}</label>
+        <select name="status">   
+          {% for s in statuses %}
+          {% ifequal s.0 order.status %}
+          <option value="{{s.0}}" selected="selected">{{s.1}}</option>
+          {% else %}
+          <option value="{{s.0}}">{{s.1}}</option>
+          {% endifequal %}
+          {% endfor %}
+        </select>
+        <input type="submit" value="Zmień" />
+      </div>
+  <a style="display: block; margin-top: 9px; float: right;" href="/panel/orders/order/{{order.pk}}">{% trans "Edit" %}</a>
+    </div>
+  </fieldset>
+</form>
+<form method="get" action="#">
+<fieldset class="module aligned collapse-open">
+  <h2 class="collapse-toggle">{% trans "Order overview" %}</h2>
+  <div class="form-row">
+    <div class="field-box"><label class="required">{% trans "Total cost:" %}</label> <p>{{order.discounted_price}}{% if order.discount %}<br />(uwzględniono rabat: {{order.discount}}zł){% endif %}</p></div>
+    <div class="field-box"><label class="required">{% trans "Customer:" %}</label> <p>{{ order.user.first_name }} {{ order.user.last_name }}</p></div>
+    <div class="field-box"><label class="required">{% trans "Shipment type:" %}</label> <p>{{order.get_shipment_type}}</p></div>
+    <div class="field-box"><label class="required">{% trans "Payment type:" %}</label> <p>{{order.get_payment_type}}</p></div>
+  </div>
+  <div class="form-row">
+    <div class="field-box"><label class="required">{% trans "Ship to:" %}</label> <p>{{customer.shipping_address.display|safe}}</p></div>
+    {% ifnotequal shipping_address billing_address %}
+    <div class="field-box"><label class="required">{% trans "Send bill to:" %}</label> <p>{{customer.billing_address.display|safe}}</p></div>
+    {% endifnotequal %}
+  </div>
+</fieldset>
+
+<fieldset class="module aligned collapse-closed">
+    <h2 class="collapse-toggle">{% trans "Customer details" %}</h2>
+  <div class="form-row">
+    <div class="field-box"><label class="required">{% trans "Name:" %}</label> <p>{{ order.user.first_name }} {{ order.user.last_name }}</p></div>
+    <div class="field-box"><label class="required">{% trans "Type:" %}</label> <p>{{customer.get_type}}</p></div>
+    {% ifequal customer.type 1 %}
+    <div class="field-box"><label class="required">{% trans "birth date" %}:</label> <p>{{customer.birthdate|date:"d M Y"}}</p></div>
+    {% else %}
+    <div class="field-box"><label class="required">{% trans "company name" %}:</label> <p>{{customer.company_name}}</p></div>
+    <div class="field-box"><label class="required">{% trans "nip" %}</label> <p>{{customer.nip}}</p></div>
+    {% endifequal %}
+  </div>
+  <div class="form-row">
+    <div class="field-box"><label class="required">{% trans "Ship to:" %}</label> <p>{{shipping_address.city}} {{shipping_address.postal_code}}, {{shipping_address.street}} {{shipping_address.house_number}}</p></div>
+    {% ifnotequal shipping_address billing_address %}
+    <div class="field-box"><label class="required">{% trans "Send bill to:" %}</label> <p>{{billing_address.city}} {{billing_address.postal_code}}, {{billing_address.street}} {{billing_address.house_number}}</p></div>
+    {% endifnotequal %}
+  </div>
+</fieldset>
+
+<fieldset class="module aligned collapse-open">
+    <h2 class="collapse-toggle">{% trans "Ordered items" %}</h2>
+  <div class="form-row">
+    <table cellspacing="0" summary="items summary" width="100%">
+      <thead>
+        <th>{% trans "Name" %}</th>
+        <th>{% trans "Quantity" %}</th>
+        <th>{% trans "Price" %}</th>
+        <th>{% trans "Total price" %}</th>
+      </thead>
+      {% for item in order.ordereditem_set.all %}
+      <tr class="{% cycle 'row1' 'row2' %}{% if item.low_quantity %} red{% endif %}">
+        <td><a href="{% url stock_product_detail item.product.pk %}">{{item.description}}</a> {% if item.low_quantity %} <strong>{% trans "Warning! Item low on stock! Number of items in stock:" %} {{item.product.quantity}}{% endif %} </strong></td>
+        <td>{{item.quantity}}</td>
+        <td>{{item.price}} {% trans "euro" %}</td>
+        <td>{{item.get_price_total}} {% trans "euro" %}</td>
+      </tr>
+      {% endfor %}
+      <tr>
+        <td colspan="3" style="font-weight: bold; text-align: right;">{% trans "Shipping cost:" %}</td>
+        <td>{{order.shipping_price}} {% trans "euro" %}</td>
+      </tr>
+      {% if order.discount %}
+      <tr>
+        <td colspan="3" style="font-weight: bold; text-align: right;">{% trans "Discount:" %}</td>
+        <td><strong>{{order.discount}} {% trans "euro" %}</strong></td>
+      </tr>
+      {% endif %}
+      <tr>
+        <td colspan="3" style="font-weight: bold; text-align: right;">{% trans "Total:" %}</td>
+        <td><strong>{{order.discounted_price}} {% trans "euro" %}</strong></td>
+      </tr>
+    </table>
+  </div>
+</fieldset>
+</form>
+
+  </div>
+{% endblock content %}

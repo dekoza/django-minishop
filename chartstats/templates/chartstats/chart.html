@@ -1,0 +1,143 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_modify adminmedia %}
+
+{% block extrahead %}{{ block.super }}
+<script type="text/javascript" src="/admin/jsi18n/"></script>
+<script type="text/javascript" src="/admin_media/js/core.js"></script>
+<script type="text/javascript" src="/admin_media/js/admin/RelatedObjectLookups.js"></script>
+{{ media }}
+{{ form.media }}
+<script type="text/javascript" src="{% admin_media_prefix %}jquery/jquery-ui-1.7.1.custom.min.js"></script>
+<script type="text/javascript" src="{% admin_media_prefix %}js/admin/CollapsedFieldsets.js"></script>
+
+
+{% if data %}
+<script type="text/javascript" src="{% admin_media_prefix %}js/excanvas.pack.js"></script>
+<script type="text/javascript" src="{% admin_media_prefix %}js/jquery.flot.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+    {% block flot_settings %}
+    var flot_settings ={ 
+xaxis: {mode: 'time', timeformat: "%d %b" },
+yaxis: {autoscaleMargin: 0.4, min: 0 },
+selection: { mode: "xy" },
+grid: {labelMargin: 8,hoverable: true, clickable: true, color: "#bbb", borderWidth: 0.5},
+colors: ["#659dc2", "#dba255", "#919733"],
+legend: {position: "ne", margin: 2, noColumns: 2, backgroundOpacity: 0.3 }
+}
+    {% endblock flot_settings %}
+
+    {% block flot_data %}
+    var data_settings = [];
+    {% for d in data %}
+    var chart_data_{{forloop.counter0}} = [{{d}}];
+    data_settings[{{forloop.counter0}}] = {
+      label: "{{yaxis}}",
+      data: chart_data_{{forloop.counter0}},
+      lines: { show: true, fill: 0.4 },
+      points: {show: true}
+    };
+    {% endfor %}
+    {% endblock flot_data %}
+
+  $.plot($("div#plot_placeholder"), data_settings, flot_settings);
+
+  var previousPoint = null;
+  $("#plot_placeholder").bind("plothover", function (event, pos, item) {
+      $("#x").text(pos.x.toFixed(2));
+      $("#y").text(pos.y.toFixed(2));
+
+      if (item) {
+      if (previousPoint != item.datapoint) {
+      previousPoint = item.datapoint;
+
+      $("#tooltip").remove();
+      var x = item.datapoint[0].toFixed(2),
+      y = item.datapoint[1].toFixed(2);
+
+      showTooltip(item.pageX, item.pageY, y+" "+item.series.label);
+      }
+      } else {
+      $("#tooltip").remove();
+      previousPoint = null;
+      }
+      }); // eof plothover bind
+
+
+}); // eof doc ready
+
+function showTooltip(x, y, contents) {
+  $('<div id="tooltip">' + contents + '</div>').css( {
+    position: 'absolute',
+    display: 'none',
+    top: y + 5,
+    left: x + 15,
+    border: '1px solid #ccc',
+    padding: '2px',
+    'background-color': '#659dc2',
+    'font-weight': 'bold',
+    color: '#fff',
+    opacity: 0.80
+  }).appendTo("body").fadeIn(200);
+}
+
+</script>
+{% endif %}
+{% endblock %}
+
+{% block stylesheet %}{% admin_media_prefix %}css/forms.css{% endblock %}
+
+{% block coltype %}{% if ordered_objects %}colMS{% else %}colM{% endif %}{% endblock %}
+
+{% block bodyclass %}{{ opts.app_label }}-{{ opts.object_name.lower }} change-form{% endblock %}
+
+{% block breadcrumbs %}{% if not is_popup %}
+<div class="breadcrumbs">
+     <a href="/admin/">{% trans "Home" %}</a> &rsaquo;
+     {#<a href="{% url admin_orders_all %}">{{ app_label|capfirst|escape }}</a>&rsaquo;#}  {{ name }}
+</div>
+{% endif %}{% endblock %}
+
+{% block content %}<div id="content-main">
+{% block object-tools %}
+{% if change %}{% if not is_popup %}
+  <ul class="object-tools"><li><a href="history/">{% trans "History" %}</a></li>
+  {% if has_absolute_url %}<li><a href="../../../r/{{ content_type_id }}/{{ object_id }}/" class="focus">{% trans "View on site" %}</a></li>{% endif%}
+  </ul>
+{% endif %}{% endif %}
+{% endblock %}
+
+{% if is_popup %}<input type="hidden" name="_popup" value="1" />{% endif %}
+{% if save_on_top %}{% submit_row %}{% endif %}
+{% if errors %}
+    <p class="errornote">
+    {% blocktrans count errors|length as counter %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktrans %}
+    </p>
+    <ul class="errorlist">{% for error in adminform.form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+{% endif %}
+
+<form action="" method="post">
+  <fieldset class="module aligned">
+    <h2>{% trans "Please choose a date range" %}</h2>
+    {% for field in form %}
+    <div class="form-row">
+      <div class="field-box">
+        {{field.errors}}
+        {{ field.label_tag }} 
+        {{field}}
+      </div>
+    </div>
+    {% endfor %}
+    <input type="submit" value="{% trans "Submit" %}" />
+  </fieldset>
+
+{% if data %}
+<fieldset class="module aligned">
+  <div class="form-row">
+    <div id="plot_placeholder" style="width: 800px; height: 350px;"></div>
+  </div>
+</fieldset>
+{% endif %}
+</form>
+  </div>
+{% endblock content %}

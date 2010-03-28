@@ -1,0 +1,46 @@
+{% extends "admin/base_site.html" %}
+{% load adminmedia admin_list i18n %}
+{% load mptt_tags %}
+
+{% block stylesheet %}{% admin_media_prefix %}css/changelists.css{% endblock %}
+
+{% block bodyclass %}change-list{% endblock %}
+
+{% block coltype %}flex{% endblock %}
+
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="../../">{% trans "Home" %}</a> &rsaquo; <a href="../">Products</a> &rsaquo; {{ model_name }}</div>{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <h1>Edit {{ model_name_singular }} tree</h1>
+{% block object-tools %}
+<ul class="object-tools"><li><a href="add/" class="addlink">Add {{ model_name_singular }}</a></li></ul>
+{% endblock %}
+<div id="changelist" class="module">
+<table cellspacing="0" width="100%">
+<thead>
+<tr>
+  <th>Name</th>
+</tr>
+</thead>
+<tbody><tr><td>
+{% ifequal tree_model "Categories" %}
+{% full_tree_for_model products.Category as categories %}
+{% for category,structure in categories|tree_info %}
+{% if structure.new_level %}<ul><li>{% else %}</li><li>{% endif %}
+  <a href="{{category.pk}}/">{{ category.name }}</a>
+  {% for level in structure.closed_levels %}</li></ul>{% endfor %}
+{% endfor %}
+{% else %}
+{% full_tree_for_model products.Solution as categories %}
+{% for category,structure in categories|tree_info %}
+{% if structure.new_level %}<ul><li>{% else %}</li><li>{% endif %}
+  <a href="{{category.pk}}/">{{ category.name }}</a>
+  {% for level in structure.closed_levels %}</li></ul>{% endfor %}
+{% endfor %}
+{% endifequal %}
+</td></tr></tbody>
+</table>
+</div>
+</div>
+{% endblock %}

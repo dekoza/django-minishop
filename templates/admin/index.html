@@ -1,0 +1,248 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% load navigation %}
+
+{% block stylesheet %}{% load adminmedia %}{% admin_media_prefix %}css/dashboard.css{% endblock %}
+
+{% block coltype %}colMS{% endblock %}
+{% block bodyclass %}dashboard{% endblock %}
+
+{% block breadcrumbs %}<div class="breadcrumbs">{% trans "Home" %}</div>{% endblock %}
+
+{% block extrahead %}
+<script type="text/javascript" src="{% admin_media_prefix %}js/excanvas.pack.js"></script>
+<script type="text/javascript" src="{% admin_media_prefix %}js/jquery.flot.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+  var d4 = {{orders_amount}};
+  $.plot($("div#plot_placeholder1"), [
+{
+label: "{% trans "orders" %}",
+data: d4,
+lines: { show: true, fill: 0.4 },
+points: {show: true}
+}
+
+
+], { 
+xaxis: {mode: 'time', timeformat: "%d %b" },
+yaxis: {autoscaleMargin: 0.4, min: 0 },
+selection: { mode: "xy" },
+grid: {labelMargin: 8,hoverable: true, clickable: true, color: "#bbb", borderWidth: 0.5},
+colors: ["#659dc2", "#dba255", "#919733"],
+legend: {position: "ne", margin: 2, noColumns: 2, backgroundOpacity: 0.3 }
+});
+
+var previousPoint = null;
+ $("#plot_placeholder1").bind("plothover", function (event, pos, item) {
+ $("#x").text(pos.x.toFixed(2));
+ $("#y").text(pos.y.toFixed(2));
+
+ if (item) {
+   if (previousPoint != item.datapoint) {
+     previousPoint = item.datapoint;
+
+     $("#tooltip").remove();
+     var x = item.datapoint[0].toFixed(2),
+     y = item.datapoint[1].toFixed(2);
+
+     showTooltip(item.pageX, item.pageY, y+" "+item.series.label);
+   }
+ } else {
+ $("#tooltip").remove();
+ previousPoint = null;
+ }
+ }); // eof plothover bind
+
+var d4 = {{orders_value_current}};
+var d5 = {{orders_value_prev}};
+  $.plot($("div#plot_placeholder2"), [
+{
+label: "{% trans "this week" %} {% trans "euro" %}",
+data: d4,
+lines: { show: true, fill: 0.4 },
+points: {show: true}
+},
+{
+label: "{% trans "prev. week" %} {% trans "euro" %}",
+data: d5,
+lines: { show: true },
+points: {show: true}
+}
+
+], { 
+xaxis: {mode: 'time', timeformat: "%d %b" },
+yaxis: {autoscaleMargin: 0.6, min: 0 },
+selection: { mode: "xy" },
+grid: {labelMargin: 8,hoverable: true, clickable: true, color: "#bbb", borderWidth: 0.5},
+colors: ["#77d25b", "#dba255", "#919733"],
+legend: {position: "ne", margin: 2, noColumns: 2, backgroundOpacity: 0.3 }
+});
+
+var previousPoint = null;
+ $("#plot_placeholder2").bind("plothover", function (event, pos, item) {
+ $("#x").text(pos.x.toFixed(2));
+ $("#y").text(pos.y.toFixed(2));
+
+ if (item) {
+   if (previousPoint != item.datapoint) {
+     previousPoint = item.datapoint;
+
+     $("#tooltip").remove();
+     var x = item.datapoint[0].toFixed(2),
+     y = item.datapoint[1].toFixed(2);
+
+     showTooltip(item.pageX, item.pageY, y+" "+item.series.label);
+   }
+ } else {
+ $("#tooltip").remove();
+ previousPoint = null;
+ }
+ }); // eof plothover bind
+
+
+
+}); // eof doc ready
+
+function showTooltip(x, y, contents) {
+  $('<div id="tooltip">' + contents + '</div>').css( {
+    position: 'absolute',
+    display: 'none',
+    top: y + 5,
+    left: x + 15,
+    border: '1px solid #ccc',
+    padding: '2px',
+    'background-color': '#659dc2',
+    'font-weight': 'bold',
+    color: '#fff',
+    opacity: 0.80
+  }).appendTo("body").fadeIn(200);
+}
+
+</script>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+{% if app_list %}
+<div class="module">
+  <table summary="{% blocktrans %}Models available in the application.{% endblocktrans %}">
+    <caption><a href="{% url stock_product_list %}" class="section">{% blocktrans %}Stock{% endblocktrans %}</a></caption> 
+    <tr>
+      <th scope="row"><a href="{% url stock_product_list %}">{% trans "Stock by product" %}</a></th>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <th scope="row"><a href="{% url stock_product_list %}?query=&category=&manufacturer=&order=&order_by=quantity">{% trans "Products low on stock" %}</a></th>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+  </table>
+</div>
+<div class="module">
+  <table summary="{% blocktrans %}Models available in the application.{% endblocktrans %}">
+    <caption><a href="{% url products_category_recommendations %}" class="section">{% blocktrans %}Recommendations{% endblocktrans %}</a></caption> 
+    <tr>
+      <th scope="row"><a href="{% url products_category_recommendations %}">{% trans "Recommendations for categories" %}</a></th>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+  </table>
+</div>
+    {% for app in app_list %}
+        <div class="module">
+        <table summary="{% blocktrans with app.name as name %}Models available in the {{ name }} application.{% endblocktrans %}">
+        <caption><a href="{{ app.app_url }}" class="section">{% blocktrans with app.name as name %}{{ name }}{% endblocktrans %}</a></caption> 
+        {% for model in app.models %}
+            <tr>
+            {% if model.perms.change %}
+                <th scope="row"><a href="{{ model.admin_url }}">{{ model.name }}</a></th>
+            {% else %}
+                <th scope="row">{{ model.name }}</th>
+            {% endif %}
+            
+            {% if model.perms.add %}
+                <td><a href="{{ model.admin_url }}add/" class="addlink">{% trans 'Add' %}</a></td>
+            {% else %}
+                <td>&nbsp;</td>
+            {% endif %}
+            
+            {% if model.perms.change %}
+                <td><a href="{{ model.admin_url }}" class="changelink">{% trans 'Change' %}</a></td>
+            {% else %}
+                <td>&nbsp;</td>
+            {% endif %}
+            </tr>
+        {% endfor %}
+        </table>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>{% trans "You don't have permission to edit anything." %}</p>
+{% endif %}
+</div>
+{% endblock %}
+
+{% block sidebar %}
+<div id="content-related-wide">
+  <div class="module" id="stats-module">
+    <h2>{% trans "Shop stats" %}</h2>
+    <h2>{% trans "Total value of products in stock:" %} {{total_volume}} {% trans "euro" %}</h2>
+    <h3>{% trans "Sales this week" %}</h3>
+    <div id="plot_placeholder1" style="width: 370px; height: 140px; margin: 5px auto;"></div>
+    <h3>{% trans "Income comparison for last two weeks" %}</h3>
+    <div id="plot_placeholder2" style="width: 370px; height: 140px; margin: 5px auto;"></div>
+    <h3><a href="{% url stats_total_orders %}">{% trans "Orders report" %}</a></h3>
+    <h3><a href="{% url stats_total_sales %}">{% trans "Total income report" %}</a></h3>
+  </div>
+</div>
+
+{% block extendedsidebar %}
+<div id="content-related-extended">
+  <div class="module" id="recent-shop-actions-module">
+    <h2>{% trans "Latest" %}</h2>
+    <h3>{% trans "Most recent orders:" %}</h3>
+    <ul class="actionlist">
+      {% ifequal recent_orders_count 0 %}
+      <li><a href="{% url admin_orders_list "new" %}" class="relevant">{% trans "No new orders" %}</a></li>
+      {% else %}
+
+      {% ifequal recent_orders_count 1 %}
+      <li><a href="{% url admin_orders_list "new" %}" class="relevant">{% trans "1 new order" %}</a></li>
+      {% else %}
+      <li><a href="{% url admin_orders_list "new" %}" class="relevant">{{recent_orders_count}} {% trans "new orders" %}</a></li>
+      {% endifequal %}
+      {% endifequal %}
+    </ul>
+
+    <h3>{% trans "Most recent customers:" %}</h3>
+    <ul class="actionlist">
+      {% for entry in recent_customers %}                                                                                     
+      <li class="addlink"><a href="customers/customer/{{ entry.pk }}">{{ entry }}</a>
+      <br />
+      <span class="mini quiet">{% trans "joined" %} {{entry.user.date_joined|date:"d b Y H:i"}}</span>
+      </li>                                    
+      {% endfor %}   
+    </ul>
+
+  </div>
+  <div class="module" id="recent-actions-module">
+    <h2>{% trans 'Recent Actions' %}</h2>
+    <h3>{% trans 'My Actions' %}</h3>
+    {% load log %}
+    {% get_admin_log 4 as admin_log for_user user %}
+    {% if not admin_log %}
+    <p>{% trans 'None available' %}</p>
+    {% else %}
+    <ul class="actionlist">
+      {% for entry in admin_log %}
+      <li class="{% if entry.is_addition %}addlink{% endif %}{% if entry.is_change %}changelink{% endif %}{% if entry.is_deletion %}deletelink{% endif %}">{% if not entry.is_deletion %}<a href="{{ entry.get_admin_url }}">{% endif %}{{ entry.object_repr }}{% if not entry.is_deletion %}</a>{% endif %}<br /><span class="mini quiet">{% filter capfirst %}{% trans entry.content_type.name %}{% endfilter %}</span></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% endblock %}

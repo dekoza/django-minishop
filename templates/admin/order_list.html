@@ -1,0 +1,105 @@
+{% extends "admin/base_site.html" %}
+{% load adminmedia admin_list i18n %}
+
+{% block stylesheet %}{% admin_media_prefix %}css/changelists.css{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+<script type="text/javascript" src="{% admin_media_prefix %}js/getElementsBySelector.js"></script>
+{# <script type="text/javascript" src="{% admin_media_prefix %}js/admin/CollapsedFiltersets.js"></script> #}
+{{ media }}
+
+<script type="text/javascript">
+$(document).ready(function(){
+    $('.filterset h3').click(function() {
+        $(this).parent().toggleClass('collapse-closed');
+        $(this).parent().toggleClass('collapse-open');
+        $(this).next().next().toggle();
+    });
+    $('input.search-fields-verbose').click(function() {
+        $(this).val("");
+        $(this).removeClass("search-fields-verbose");
+    });
+});
+</script>
+
+{% endblock %}
+
+{% block bodyclass %}change-list{% endblock %}
+
+{% if not is_popup %}{% block breadcrumbs %}<div class="breadcrumbs"><a href="../../">{% trans "Home" %}</a> &rsaquo; {{ app_label|capfirst }}</div>{% endblock %}{% endif %} 
+
+{% block coltype %}flex{% endblock %}
+
+{% block content %}
+<div id="content-main">
+<div class="module{% if cl.has_filters %} filtered{% endif %}" id="changelist">
+  <div class="button_container">
+    {% for list_type, list_label in app_types.items %}
+    <span class="ver_button"> <a href="{% url admin_orders_list list_type %}" {% ifequal type list_type %}class="focus"{% endifequal %}>{{list_label}}</a></span>
+    {% endfor %}
+  </div>
+{% block filters %}
+{% endblock %}
+
+{% block result_list %}
+  {% if object_list %}
+<div id="changelist" class="module">
+  <table cellspacing="0">
+    <thead>
+    <th>Nr. fvat</th>
+    <th>Id zamówienia</th>
+    <th>Dane klienta</th>
+    <th>Data zamówienia</th>
+    <th>Status zamówienia</th>
+    <th>Wartość zamówienia</th>
+    <th>Płatność</th>
+    <th>Dostawa</th>
+    </thead>
+    {% for order in object_list %}
+    <tr class="{% cycle 'row1' 'row2' %}">
+      <td>
+        {{order.invoice_number}}<br />
+        <a href="{% url order_invoice "original" order.id %}">oryginał</a> | <a href="{% url order_invoice "copy" order.id %}">kopia</a>
+      </td>
+      <td><a href="{% url review_order order.id %}">{{order.name}}</a></td>
+      <td><a href="{% url review_order order.id %}">{{order.user.last_name}} {{order.user.first_name}}</a></td>
+      <td>{{order.created|date:"d M y"}} &ndash; {{order.created|date:"H:i"}}</td>
+      <td>
+        <form action="{% url order_change_status order.pk %}?next={{current_url}}" method="post">
+          <select name="status">   
+            {% for s in statuses %}
+            {% ifequal s.0 order.status %}
+            <option value="{{s.0}}" selected="selected">{{s.1}}</option>
+            {% else %}
+            <option value="{{s.0}}">{{s.1}}</option>
+            {% endifequal %}
+            {% endfor %}
+          </select>
+          <input type="submit" value="Zmień" />
+        </form>
+      </td>
+      <td>{{order.discounted_price}}{% if order.discount %}<br />(uwzględniono rabat: {{order.discount}}zł){% endif %}</td>
+      <td>{{order.get_payment_type}}</td>
+      <td>{{order.get_shipment_type}}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+  {% endif %}
+{% endblock %}
+<p class="paginator">
+{% if is_paginated %}
+{% for i in paginator.page_range %}
+{% ifequal i page %}
+ &nbsp;&nbsp;{{i}} &nbsp;&nbsp;
+ {% else %}
+  <a href="{% url admin_orders_list_paginated type i %}">{{i}}</a>
+  {% endifequal %}
+{% endfor %}
+{% endif %}
+{{ count }} {% trans "orders" %}
+</p>
+</div>
+</div>
+
+{% endblock %}

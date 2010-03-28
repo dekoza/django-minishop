@@ -1,0 +1,116 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="pl" xml:lang="pl" >
+<head>
+<title>Lista zamówień sklepu Biolander</title>
+<link rel="stylesheet" type="text/css" href="/admin_media/css/changelists.css" />
+
+
+
+<meta name="robots" content="NONE,NOARCHIVE" />
+</head>
+
+
+<body class="change-list">
+
+<!-- Container -->
+<div id="container">
+
+    
+    <!-- Header -->
+    <div id="header">
+        <div id="branding">
+        
+<h1 id="site-name">Administracja Django</h1>
+
+        </div>
+        
+        <div id="user-tools">Witaj, <strong>{{user.username}}</strong>. <a href="/admin/password_change/">Zmiana hasła</a> / <a href="/admin/logout/">Wyloguj się</a></div>
+
+        
+        
+    </div>
+    <!-- END Header -->
+    {% block breadcrumbs %}
+    <div class="breadcrumbs"><a href="../../">Początek</a> &rsaquo; Orders {{ order_type }} </div>
+    {% endblock breadcrumbs %}
+    
+
+        
+
+    <!-- Content -->
+    <div id="content" class="flex">
+
+      {% block title %}
+      <h1>Lista zamówień {{ order_big_name }} </h1>
+      {% endblock title %}
+        
+<div id="content-main">
+      {% block content %}        
+  {% if orders %}
+<div id="changelist" class="module">
+  <table cellspacing="0">
+    <thead>
+    <th>Id zamówienia</th>
+    <th>Status zamówienia</th>
+    <th>Wartość zamówienia</th>
+    <th>Płatność</th>
+    <th>Dostawa</th>
+    </thead>
+    {% for order in orders %}
+    <tr class="{% cycle 'row1' 'row2' %}">
+      <td><a href="{% url review_order order.pk %}">{{order.name}}</a></td>
+      <td>
+        <form action="{% url order_change_status order.pk %}?next={{current_url}}" method="post">
+          <select name="status">   
+            {% for s in statuses %}
+            {% ifequal s.0 order.status %}
+            <option value="{{s.0}}" selected="selected">{{s.1}}</option>
+            {% else %}
+            <option value="{{s.0}}">{{s.1}}</option>
+            {% endifequal %}
+            {{order.status}}
+            {% endfor %}
+          </select>
+          <input type="submit" value="Zmień" />
+        </form>
+      </td>
+      <td>{{order.price}}</td>
+      <td>{{order.get_payment_type}}</td>
+      <td>{{order.get_shipment_type}}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+  {% endif %}
+<div class="module" id="changelist">
+
+
+<p class="paginator">
+
+{{orders_len}} orders
+
+</p>
+
+</div>
+      {% endblock content %}        
+<div id="content-related">
+{% block content_related %}
+{% endblock content_related %}
+</div>
+
+</div>
+
+        
+        <br class="clear" />
+
+    </div>
+    <!-- END Content -->
+
+
+    <div id="footer"></div>
+</div>
+<!-- END Container -->
+
+</body>
+</html>
+

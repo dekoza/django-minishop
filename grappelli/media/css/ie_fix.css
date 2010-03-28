@@ -1,0 +1,18 @@
+
+#content-related {
+    width: 18em;
+}
+
+#content-related-wide {
+  position: relative;
+    width: 34em!important;
+    left: 20em;
+}
+#content-related-extended {
+  position: relative;
+    width: 18em !important;
+    left: 1em;
+}
+
+
+

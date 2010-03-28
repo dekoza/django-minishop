@@ -1,0 +1,10 @@
+*.pyc
+*.pyo
+.vbk
+.svn
+*.fcgi
+/settings.py
+/settings??.py
+/run
+/media/slideshow/
+/media_*/slideshow/
